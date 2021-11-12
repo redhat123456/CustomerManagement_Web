@@ -4,6 +4,15 @@
 
 本项目为参加桂林市的 2021 年桂林市创新大赛-软件设计大赛，而创建的仓库，该仓库只放该比赛中项目的前端代码
 
+## 预览
+
+预览地址：http://tanger.ltd/CustomerManagement_Webpreview/
+
+登录页面：
+![](https://i.loli.net/2021/11/12/tFC9uaPY3xvloKX.png)
+主页：
+![](https://i.loli.net/2021/11/12/Tif51DjFmGIJLBk.png)
+
 ## 开发环境说明
 
 本项目采用 npm 作为包管理工具进行本地开发
