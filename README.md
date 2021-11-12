@@ -12,9 +12,13 @@ Node.js 版本>= 10.15.1
 ## 技术栈
 
 🐐 前端框架：Vue2
+
 🐢UI 框架：element
+
 🦔 样式：CSS
+
 🦨 脚本语言：JavaScript
+
 🐮 一些花里胡哨的 js 库：axios、jquery、particles 等等
 
 ## 参与贡献
