@@ -9,7 +9,7 @@
 预览地址：http://tanger.ltd/CustomerManagement_Webpreview/
 
 登录页面：
-![](https://i.loli.net/2021/11/12/tFC9uaPY3xvloKX.png)
+![](https://i.loli.net/2021/11/13/Ap87hF5QkeUmyHC.png)
 主页：
 ![](https://i.loli.net/2021/11/12/Tif51DjFmGIJLBk.png)
 
