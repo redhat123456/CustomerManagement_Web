@@ -51,11 +51,11 @@ npm install
 
 ```
 
-- Step 3：启动开发服务器，进行开发
+- Step 3：启动开发服务器，进行开发&本地预览
 
 ```bash
 
-npm run start
+npm run serve
 
 ```
 
