@@ -35,12 +35,55 @@
         <el-card shadow="hover" style="min-height: 600px;">
           <div v-if="selectedCamera">
             <h3>{{ selectedCamera.name }} 详情</h3>
-            <img
-              :src="cameraImage"
-              alt="摄像头图"
-              style="width: 100%; max-height: 300px; object-fit: contain; margin-bottom: 20px;"
-            />
-            <el-form :model="cameraConfig" label-width="100px">
+            <div
+              class="image-container"
+              ref="imageContainer"
+              @mousedown="startDraw"
+              @mousemove="drawing"
+              @mouseup="endDraw"
+              @mouseleave="endDraw"
+              style="position: relative; user-select: none;"
+            >
+              <img
+                ref="imageRef"
+                :src="cameraImage"
+                alt="摄像头图"
+                style="width: 100%; max-height: 400px; object-fit: contain; display: block;"
+              />
+              <svg
+                v-if="rectangles.length > 0"
+                :style="{ position: 'absolute', top: 0, left: 0, width: imageSize.width + 'px', height: imageSize.height + 'px', pointerEvents: 'none' }"
+              >
+                <rect
+                  v-for="(rect, idx) in rectangles"
+                  :key="idx"
+                  :x="rect.x"
+                  :y="rect.y"
+                  :width="rect.width"
+                  :height="rect.height"
+                  stroke="red"
+                  stroke-width="2"
+                  fill="rgba(255,0,0,0.3)"
+                />
+              </svg>
+              <!-- 绘制中的矩形 -->
+              <svg
+                v-if="isDrawing && currentRect"
+                :style="{ position: 'absolute', top: 0, left: 0, width: imageSize.width + 'px', height: imageSize.height + 'px', pointerEvents: 'none' }"
+              >
+                <rect
+                  :x="currentRect.x"
+                  :y="currentRect.y"
+                  :width="currentRect.width"
+                  :height="currentRect.height"
+                  stroke="blue"
+                  stroke-width="2"
+                  fill="rgba(0,0,255,0.3)"
+                />
+              </svg>
+            </div>
+
+            <el-form :model="cameraConfig" label-width="100px" style="margin-top: 20px;">
               <el-form-item label="分辨率">
                 <el-input v-model="cameraConfig.resolution" placeholder="请输入分辨率" />
               </el-form-item>
@@ -55,7 +98,7 @@
                 />
               </el-form-item>
             </el-form>
-            <el-button type="primary" @click="saveConfig">保存配置</el-button>
+            <el-button type="primary" @click="saveConfig" style="margin-top: 10px;">保存配置</el-button>
           </div>
           <div v-else>
             <p>请选择左侧摄像头查看详情</p>
@@ -66,54 +109,20 @@
 
     <!-- 添加摄像头对话框 -->
     <el-dialog
-      title="添加摄像头并选择警戒区域"
+      title="添加摄像头"
       :visible.sync="addDialogVisible"
-      width="700px"
+      width="400px"
       @close="resetAddDialog"
     >
-      <div style="position: relative; user-select: none;">
-        <!-- 图片 -->
-        <img
-          ref="imageRef"
-          :src="cameraImage"
-          alt="警戒区域选择图"
-          style="width: 100%; max-height: 400px; object-fit: contain; border: 1px solid #ccc;"
-          @click="onImageClick"
-        />
-        <!-- SVG覆盖层，用来绘制矩形 -->
-        <svg
-          v-if="points.length > 0"
-          :style="{ position: 'absolute', top: 0, left: 0, width: imageSize.width + 'px', height: imageSize.height + 'px', pointerEvents: 'none' }"
-        >
-          <rect
-            v-if="points.length === 2"
-            :x="rectX"
-            :y="rectY"
-            :width="rectWidth"
-            :height="rectHeight"
-            stroke="red"
-            stroke-width="2"
-            fill="rgba(255, 0, 0, 0.3)"
-          />
-          <!-- 标记点 -->
-          <circle
-            v-for="(p, i) in points"
-            :key="i"
-            :cx="p.x"
-            :cy="p.y"
-            r="5"
-            fill="red"
-            stroke="white"
-            stroke-width="1"
-          />
-        </svg>
-      </div>
-      <div style="margin-top: 15px; text-align: right;">
-        <el-button @click="resetPoints" size="small">重置选择</el-button>
-        <el-button type="primary" :disabled="points.length !== 2" @click="confirmAddCamera"
-          >确定</el-button
-        >
-      </div>
+      <el-form :model="newCamera" label-width="80px">
+        <el-form-item label="摄像头名称">
+          <el-input v-model="newCamera.name" autocomplete="off" />
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="addDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="confirmAddCamera">确定</el-button>
+      </span>
     </el-dialog>
   </div>
 </template>
@@ -124,7 +133,11 @@ export default {
   data() {
     return {
       cameras: [
-        { id: 1, name: '主入口摄像头', alertRegion: null },
+        {
+          id: 1,
+          name: '主入口摄像头',
+          alertRegion: { x: 50, y: 50, width: 100, height: 80 },
+        },
         { id: 2, name: '停车场摄像头', alertRegion: null },
       ],
       selectedCamera: null,
@@ -136,87 +149,69 @@ export default {
       cameraImage: 'https://s2.loli.net/2022/12/20/EqxNvAYwcTI5Mkz.jpg',
       nextCameraId: 3,
 
-      // 添加摄像头弹框控制
+      // 绘制相关
+      isDrawing: false,
+      startPoint: null,
+      currentRect: null,
+
+      rectangles: [],
+
+      // 添加摄像头对话框
       addDialogVisible: false,
-      points: [], // 存储两个点 {x,y}
-      imageSize: { width: 0, height: 0 }, // 图片实际显示尺寸
-      newCameraName: '',
+      newCamera: {
+        name: '',
+      },
+
+      imageSize: {
+        width: 0,
+        height: 0,
+      },
     }
   },
-  computed: {
-    // 计算矩形左上角坐标和宽高
-    rectX() {
-      return Math.min(this.points[0]?.x ?? 0, this.points[1]?.x ?? 0)
-    },
-    rectY() {
-      return Math.min(this.points[0]?.y ?? 0, this.points[1]?.y ?? 0)
-    },
-    rectWidth() {
-      return Math.abs((this.points[1]?.x ?? 0) - (this.points[0]?.x ?? 0))
-    },
-    rectHeight() {
-      return Math.abs((this.points[1]?.y ?? 0) - (this.points[0]?.y ?? 0))
-    },
-  },
-  methods: {
-    selectCamera(id) {
-      this.selectedCamera = this.cameras.find((c) => c.id === Number(id))
-      if (this.selectedCamera) {
+  watch: {
+    selectedCamera(newVal) {
+      if (newVal) {
+        // 初始化详情区域配置
         this.cameraConfig = {
           resolution: '1920x1080',
           fps: 30,
           remark: '',
         }
+        // 设置已有警戒区域
+        this.rectangles = []
+        if (newVal.alertRegion) {
+          this.rectangles.push({ ...newVal.alertRegion })
+        }
+        this.$nextTick(() => {
+          const img = this.$refs.imageRef
+          this.imageSize.width = img.clientWidth
+          this.imageSize.height = img.clientHeight
+        })
+      } else {
+        this.rectangles = []
       }
+    },
+  },
+  methods: {
+    selectCamera(id) {
+      this.selectedCamera = this.cameras.find((c) => c.id === Number(id))
     },
     openAddDialog() {
       this.addDialogVisible = true
-      this.$nextTick(() => {
-        const img = this.$refs.imageRef
-        this.imageSize.width = img.clientWidth
-        this.imageSize.height = img.clientHeight
-      })
-    },
-    onImageClick(event) {
-      if (this.points.length >= 2) return
-      // 计算点击相对于图片左上角的坐标
-      const rect = event.target.getBoundingClientRect()
-      const x = event.clientX - rect.left
-      const y = event.clientY - rect.top
-      this.points.push({ x, y })
-    },
-    resetPoints() {
-      this.points = []
+      this.newCamera.name = ''
     },
     confirmAddCamera() {
-      if (this.points.length !== 2) {
-        this.$message.warning('请先选定两个点来确定警戒区域')
-        return
-      }
-      const newName = prompt('请输入新摄像头名称', `新摄像头${this.nextCameraId}`)
-      if (!newName) {
+      if (!this.newCamera.name.trim()) {
         this.$message.warning('摄像头名称不能为空')
         return
       }
-      // 保存摄像头及警戒区域（相对坐标）
       this.cameras.push({
-        id: this.nextCameraId,
-        name: newName,
-        alertRegion: {
-          x: this.rectX,
-          y: this.rectY,
-          width: this.rectWidth,
-          height: this.rectHeight,
-        },
+        id: this.nextCameraId++,
+        name: this.newCamera.name.trim(),
+        alertRegion: null,
       })
-      this.nextCameraId++
-      this.$message.success('添加摄像头成功，警戒区域已设置')
+      this.$message.success('添加摄像头成功')
       this.addDialogVisible = false
-      this.points = []
-    },
-    addCamera() {
-      // 原先的直接添加功能可以删除或保留，看你需要
-      this.openAddDialog()
     },
     removeCamera(id) {
       this.$confirm('确定删除该摄像头吗？', '删除确认', {
@@ -238,8 +233,50 @@ export default {
         this.$message.warning('请先选择一个摄像头')
         return
       }
+      // 保存配置和警戒区域
+      this.selectedCamera.alertRegion = this.rectangles[0] || null
       this.$message.success(`摄像头【${this.selectedCamera.name}】配置已保存`)
-      console.log('保存配置:', this.cameraConfig)
+      console.log('保存配置:', this.cameraConfig, '警戒区域:', this.selectedCamera.alertRegion)
+    },
+
+    // 绘制区域相关
+    startDraw(e) {
+      if (!this.selectedCamera) return
+      const rect = this.$refs.imageRef.getBoundingClientRect()
+      this.isDrawing = true
+      this.startPoint = {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+      }
+      this.currentRect = {
+        x: this.startPoint.x,
+        y: this.startPoint.y,
+        width: 0,
+        height: 0,
+      }
+    },
+    drawing(e) {
+      if (!this.isDrawing) return
+      const rect = this.$refs.imageRef.getBoundingClientRect()
+      const currentPoint = {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+      }
+      this.currentRect.x = Math.min(this.startPoint.x, currentPoint.x)
+      this.currentRect.y = Math.min(this.startPoint.y, currentPoint.y)
+      this.currentRect.width = Math.abs(currentPoint.x - this.startPoint.x)
+      this.currentRect.height = Math.abs(currentPoint.y - this.startPoint.y)
+    },
+    endDraw() {
+      if (!this.isDrawing) return
+      this.isDrawing = false
+      // 如果矩形有效才保存
+      if (this.currentRect.width > 5 && this.currentRect.height > 5) {
+        // 只允许一个区域，替换已有
+        this.rectangles = [Object.assign({}, this.currentRect)]
+      } else {
+        this.currentRect = null
+      }
     },
   },
 }
@@ -262,5 +299,10 @@ export default {
 }
 .camera-detail {
   background: #fff;
+}
+.image-container {
+  cursor: crosshair;
+  user-select: none;
+  position: relative;
 }
 </style>
