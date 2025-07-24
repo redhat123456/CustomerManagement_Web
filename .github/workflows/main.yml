@@ -1,0 +1,34 @@
+name: Deploy Vue Build to Preview Repo
+
+on:
+  push:
+    branches:
+      - main  # 或者你的主分支名
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 16
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build project
+        run: npm run build
+
+      - name: Deploy to Preview Repo
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: main  # 目标仓库的分支
+          folder: dist  # 构建输出目录
+          repository-name: redhat123456/CustomerManagement_Webpreview
+          token: ${{ secrets.PREVIEW_DEPLOY_TOKEN }}
+          clean: true  # 清除旧文件
