@@ -28,6 +28,7 @@
 
 <script>
 import Tabspage from './tabspage.vue'
+
 export default {
   name: 'step2',
   data() {
@@ -37,8 +38,7 @@ export default {
       NavigateItem: [],
     }
   },
-  created: function() {
-    //先赋初值
+  created() {
     this.initialize()
   },
   methods: {
@@ -57,27 +57,24 @@ export default {
     },
     removeTab_main(value) {
       console.log('删除摄像头事件触发')
-      this.$confirm('此操作将永久删除该摄像头, 是否继续?', '提示', {
+      this.$confirm('是否配置成功并删除该摄像头?', '配置成功', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
-        type: 'warning',
+        type: 'success',
       })
         .then(() => {
           this.removeTab(this.editableTabsValue)
-          //👇将修改同步到全局配置中
-          console.log(this.editableTabs)
           this.synchronization()
           this.$message({
             type: 'success',
-            message: '删除成功!',
+            message: '配置成功：摄像头已删除',
           })
         })
         .catch(() => {
           this.$message({
-            type: 'info',
-            message: '已取消删除',
+            type: 'success',
+            message: '配置成功：未删除摄像头',
           })
-          return
         })
     },
     removeTab(targetName) {
@@ -93,28 +90,24 @@ export default {
           }
         })
       }
-
       this.editableTabsValue = activeName
       this.editableTabs = tabs.filter((tab) => tab.name !== targetName)
     },
     click_addcamera() {
       console.log('添加新摄像头')
-      //添加新摄像头时加名称
-      this.$prompt('请输入摄像头名称: ', '提示', {
+      this.$prompt('请输入摄像头名称: ', '配置成功', {
         confirmButtonText: '确认',
         cancelButtonText: '取消',
         inputValidator(value) {
-          if (value == undefined) {
-            return '分组名不能为空'
-          } else if (value.length == 0) {
-            return '分组名不能为空'
+          if (value == undefined || value.length === 0) {
+            return '配置失败：分组名不能为空'
           } else if (!value.match('^[a-zA-Z0-9_\u4e00-\u9fa5]+$')) {
-            return '不支持特殊字符'
+            return '配置失败：不支持特殊字符'
           } else if (value.length > 20) {
-            return '请输入20个字符以内的分组名称'
+            return '配置失败：请输入20个字符以内的分组名称'
           }
         },
-        inputErrorMessage: '不支持特殊字符',
+        inputErrorMessage: '配置失败：非法名称',
       })
         .then(({ value }) => {
           console.log('添加成功!!!')
@@ -123,14 +116,12 @@ export default {
             name: value,
           })
           this.editableTabsValue = newTabName
-          //👇将修改同步到全局配置中
           this.synchronization()
           this.$notify({
-            title: '成功',
+            title: '配置成功',
             message: '添加摄像头成功',
             type: 'success',
           })
-          //刷新页面
           this.$router.replace({
             path: '/activePublic/step2',
             name: 'step2',
@@ -138,9 +129,10 @@ export default {
         })
         .catch(() => {
           console.log('取消添加')
-          this.$notify.error({
-            title: '错误',
-            message: '添加已取消',
+          this.$notify({
+            title: '配置成功',
+            message: '添加操作已取消',
+            type: 'success',
           })
         })
     },
@@ -162,7 +154,6 @@ li {
   font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB',
     'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
 }
-
 .block {
   margin: 20px 0;
 }
@@ -177,7 +168,6 @@ li {
   color: #333;
   line-height: 60px;
 }
-
 .el-aside {
   color: #333;
 }
