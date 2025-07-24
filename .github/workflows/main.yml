@@ -8,7 +8,7 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-
+    environment: secret
     steps:
       - name: Checkout source repo
         uses: actions/checkout@v4
