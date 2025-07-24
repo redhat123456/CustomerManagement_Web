@@ -3,12 +3,12 @@ name: Deploy Vue Build to Preview Repo
 on:
   push:
     branches:
-      - main  # 或者你的主分支名
+      - main
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    environment: secret
+
     steps:
       - name: Checkout source repo
         uses: actions/checkout@v4
@@ -28,7 +28,7 @@ jobs:
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           branch: main  # 目标仓库的分支
-          folder: dist  # 构建输出目录
+          folder: dist
           repository-name: redhat123456/CustomerManagement_Webpreview
           token: ${{ secrets.PREVIEW_DEPLOY_TOKEN }}
-          clean: true  # 清除旧文件
+          clean: true
