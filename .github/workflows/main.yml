@@ -1,4 +1,4 @@
-name: Deploy Vue Build to Preview Repo
+name: Deploy Vue Build to External Repo
 
 on:
   push:
@@ -6,14 +6,14 @@ on:
       - main
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout source repo
+      - name: Checkout source code
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 16
@@ -24,11 +24,12 @@ jobs:
       - name: Build project
         run: npm run build
 
-      - name: Deploy to Preview Repo
-        uses: JamesIves/github-pages-deploy-action@v4
+      - name: Deploy to redhat123456/CustomerManagement_Webpreview (main)
+        uses: peaceiris/actions-gh-pages@v3
         with:
-          branch: main  # 目标仓库的分支
-          folder: dist
-          repository-name: redhat123456/CustomerManagement_Webpreview
-          token: ${{ secrets.PREVIEW_DEPLOY_TOKEN }}
-          clean: true
+          publish_dir: ./dist
+          external_repository: redhat123456/CustomerManagement_Webpreview
+          publish_branch: main
+          personal_token: ${{ secrets.PREVIEW_DEPLOY_TOKEN }}
+          user_name: github-actions[bot]
+          user_email: github-actions[bot]@users.noreply.github.com
