@@ -67,6 +67,8 @@
 </template>
 
 <script>
+
+
 export default {
   name: 'CameraSystem',
   data() {
@@ -94,8 +96,59 @@ export default {
           resolution: '1920x1080',
           fps: 30,
           remark: '',
+
+
+
+
+
+
+
+
         }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
       }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     },
     addCamera() {
       this.cameras.push({
@@ -113,21 +166,51 @@ export default {
           this.cameras = this.cameras.filter((c) => c.id !== id)
           if (this.selectedCamera && this.selectedCamera.id === id) {
             this.selectedCamera = null
+
+
+
+
+
+
+
+
+
+
+
+
+
+
           }
           this.$message.success('删除摄像头成功')
         })
         .catch(() => {
           this.$message.info('已取消删除')
+
+
+
+
         })
     },
     saveConfig() {
       if (!this.selectedCamera) {
         this.$message.warning('请先选择一个摄像头')
         return
+
+
+
+
+
+
+
+
+
+
       }
       // 模拟保存逻辑
       this.$message.success(`摄像头【${this.selectedCamera.name}】配置已保存`)
       console.log('保存配置:', this.cameraConfig)
+
+
     },
   },
 }
